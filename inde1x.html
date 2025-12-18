@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Sync AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .subject-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .subject-card:hover { transform: translateY(-2px); }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900">
+    <div id="app" class="max-w-4xl mx-auto p-4 sm:p-8">
+        <!-- App Header -->
+        <div id="setup-header" class="mb-12 flex flex-col items-center">
+            <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl mb-4">
+                <svg class="text-white w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <h1 class="text-4xl font-extrabold tracking-tighter uppercase">Study <span class="text-indigo-600">Sync</span></h1>
+            <p class="text-slate-400 font-bold mt-2 uppercase text-[10px] tracking-[0.3em]">AI-Powered Curriculum Orchestrator</p>
+        </div>
+
+        <!-- Configuration Screen -->
+        <div id="config-screen" class="space-y-8">
+            <!-- Global Settings -->
+            <section class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-[10px] text-slate-400 font-extrabold uppercase mb-2 ml-1">Schedule Start Date</label>
+                        <input type="date" id="startDate" class="w-full p-3 bg-slate-50 rounded-xl border-none font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-400 font-extrabold uppercase mb-2 ml-1">Weekday Window</label>
+                        <div class="flex gap-2">
+                            <input type="time" id="weekdayStart" value="16:00" class="w-full p-2 bg-slate-50 rounded-lg border-none text-xs font-bold">
+                            <input type="time" id="weekdayEnd" value="21:00" class="w-full p-2 bg-slate-50 rounded-lg border-none text-xs font-bold">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-400 font-extrabold uppercase mb-2 ml-1">Weekend Window</label>
+                        <div class="flex gap-2">
+                            <input type="time" id="weekendStart" value="09:00" class="w-full p-2 bg-slate-50 rounded-lg border-none text-xs font-bold">
+                            <input type="time" id="weekendEnd" value="18:00" class="w-full p-2 bg-slate-50 rounded-lg border-none text-xs font-bold">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Subjects List -->
+            <div class="space-y-4">
+                <div class="flex justify-between items-center px-2">
+                    <h2 class="text-lg font-extrabold text-slate-800 uppercase tracking-tight">Academic Nodes</h2>
+                    <button onclick="addSubjectNode()" class="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl hover:bg-indigo-100 transition-colors uppercase tracking-widest">+ Add Subject</button>
+                </div>
+                <div id="subjects-container" class="space-y-4"></div>
+            </div>
+
+            <button onclick="generateSchedule()" class="w-full py-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-extrabold text-lg shadow-lg shadow-indigo-100 transition-all active:scale-[0.98] uppercase tracking-wider">
+                Generate Optimized Roadmap
+            </button>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden space-y-6">
+            <div class="flex justify-between items-center no-print">
+                <button onclick="showConfig()" class="flex items-center text-slate-500 font-bold hover:text-indigo-600 transition-colors text-sm">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg> Edit Parameters
+                </button>
+                <button onclick="exportToPDF()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-extrabold text-sm flex items-center gap-2 shadow-lg shadow-emerald-100">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Download PDF
+                </button>
+            </div>
+            <div id="schedule-display" class="grid gap-8"></div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading-overlay" class="fixed inset-0 bg-white/80 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center">
+            <div class="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+            <p class="text-indigo-600 font-extrabold uppercase tracking-widest text-[10px]">Processing Curriculum Architecture...</p>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = "AIzaSyCwNAUpyuQ8csS2C8-ZLoKvO_GVoFG64Po"; 
+        let generatedData = [];
+        const colors = [
+            { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-100', dot: 'bg-blue-400' },
+            { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-100', dot: 'bg-purple-400' },
+            { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-100', dot: 'bg-amber-400' },
+            { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-100', dot: 'bg-rose-400' },
+            { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-100', dot: 'bg-emerald-400' }
+        ];
+
+        function addSubjectNode() {
+            const id = Date.now();
+            const container = document.getElementById('subjects-container');
+            const div = document.createElement('div');
+            div.id = `node-${id}`;
+            div.className = 'bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative group subject-card';
+            div.innerHTML = `
+                <div class="grid md:grid-cols-4 gap-4">
+                    <div class="md:col-span-1">
+                        <label class="block text-[9px] text-slate-400 font-black uppercase mb-1">Subject Title</label>
+                        <input type="text" class="subject-name w-full p-2.5 bg-slate-50 rounded-lg text-sm font-bold border-none" placeholder="e.g. Organic Chem">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-[9px] text-slate-400 font-black uppercase mb-1">Exam Date</label>
+                        <input type="date" class="subject-date w-full p-2.5 bg-slate-50 rounded-lg text-sm font-bold border-none">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-[9px] text-slate-400 font-black uppercase mb-1">Priority</label>
+                        <select class="subject-diff w-full p-2.5 bg-slate-50 rounded-lg text-sm font-bold border-none appearance-none">
+                            <option value="Easy">Low Complexity</option>
+                            <option value="Medium" selected>Moderate</option>
+                            <option value="Hard">High Complexity</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-1">
+                        <input type="file" accept=".pdf" id="pdf-${id}" class="hidden" onchange="extractPDF(${id}, this)">
+                        <label for="pdf-${id}" class="flex items-center justify-center p-2.5 bg-slate-50 border-2 border-dashed border-slate-200 rounded-lg cursor-pointer hover:border-indigo-300 transition-all h-[42px] mt-4">
+                            <span class="text-[9px] font-black uppercase text-slate-400 file-status">Attach PDF</span>
+                        </label>
+                        <input type="hidden" id="text-${id}" class="extracted-text">
+                    </div>
+                </div>
+                <button onclick="document.getElementById('node-${id}').remove()" class="absolute -top-2 -right-2 bg-white border border-slate-100 text-slate-300 hover:text-red-500 w-6 h-6 rounded-full flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">×</button>
+            `;
+            container.appendChild(div);
+        }
+
+        async function extractPDF(id, input) {
+            const file = input.files[0];
+            const status = input.parentElement.querySelector('.file-status');
+            const hidden = document.getElementById(`text-${id}`);
+            if (!file) return;
+
+            status.textContent = "Scanning...";
+            try {
+                const reader = new FileReader();
+                reader.onload = async function() {
+                    const typedarray = new Uint8Array(this.result);
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    let fullText = "";
+                    for (let i = 1; i <= Math.min(pdf.numPages, 3); i++) {
+                        const page = await pdf.getPage(i);
+                        const content = await page.getTextContent();
+                        fullText += content.items.map(s => s.str).join(" ");
+                    }
+                    hidden.value = fullText.slice(0, 3000);
+                    status.textContent = "Synced ✓";
+                    status.classList.replace('text-slate-400', 'text-indigo-600');
+                };
+                reader.readAsArrayBuffer(file);
+            } catch (e) {
+                status.textContent = "Error";
+            }
+        }
+
+        async function generateSchedule() {
+            const nodes = document.querySelectorAll('#subjects-container > div');
+            const startDate = document.getElementById('startDate').value;
+            if (!startDate) return alert("Select a start date");
+            if (nodes.length === 0) return alert("Add a subject");
+
+            document.getElementById('loading-overlay').classList.remove('hidden');
+
+            const subjects = Array.from(nodes).map(n => ({
+                name: n.querySelector('.subject-name').value || 'Unlabeled',
+                date: n.querySelector('.subject-date').value,
+                difficulty: n.querySelector('.subject-diff').value,
+                context: n.querySelector('.extracted-text').value
+            }));
+
+            const prompt = `
+                Generate a study schedule starting from ${startDate}.
+                Weekday window: ${document.getElementById('weekdayStart').value} to ${document.getElementById('weekdayEnd').value}.
+                Weekend window: ${document.getElementById('weekendStart').value} to ${document.getElementById('weekendEnd').value}.
+                
+                Subjects: ${JSON.stringify(subjects)}
+                
+                Return JSON array: [{ date: "YYYY-MM-DD", sessions: [{ time: "HH:MM - HH:MM", subject: string, topic: string, isBreak: boolean }] }].
+                Use realistic blocks (45-90 mins). Prioritize exams that are sooner.
+            `;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
+                const data = await response.json();
+                generatedData = JSON.parse(data.candidates[0].content.parts[0].text);
+                renderUI(generatedData);
+            } catch (e) {
+                alert("Generation failed. Try again.");
+            } finally {
+                document.getElementById('loading-overlay').classList.add('hidden');
+            }
+        }
+
+        function renderUI(data) {
+            document.getElementById('config-screen').classList.add('hidden');
+            document.getElementById('setup-header').classList.add('hidden');
+            const display = document.getElementById('schedule-display');
+            document.getElementById('result-screen').classList.remove('hidden');
+
+            // Map unique subjects to colors
+            const subjectList = [...new Set(data.flatMap(d => d.sessions.filter(s => !s.isBreak).map(s => s.subject)))];
+            const colorMap = {};
+            subjectList.forEach((s, i) => colorMap[s] = colors[i % colors.length]);
+
+            display.innerHTML = data.map(day => `
+                <div class="day-block">
+                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3">
+                        ${new Date(day.date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+                        <span class="h-px bg-slate-100 flex-1"></span>
+                    </h3>
+                    <div class="grid gap-3">
+                        ${day.sessions.map(s => {
+                            const color = s.isBreak ? { bg: 'bg-slate-50', text: 'text-slate-400', border: 'border-slate-100', dot: 'bg-slate-200' } : (colorMap[s.subject] || colors[0]);
+                            return `
+                            <div class="flex items-center gap-4 bg-white p-4 rounded-2xl border ${color.border} shadow-sm">
+                                <div class="text-[10px] font-bold text-slate-400 w-24">${s.time}</div>
+                                <div class="w-2 h-2 rounded-full ${color.dot}"></div>
+                                <div class="flex-1">
+                                    <div class="text-[10px] font-black uppercase ${color.text} mb-0.5">${s.subject}</div>
+                                    <div class="text-sm font-bold text-slate-700">${s.topic}</div>
+                                </div>
+                                ${s.isBreak ? '<span class="text-[8px] font-black text-slate-300 uppercase italic">Recess</span>' : ''}
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(22);
+            doc.setTextColor(79, 70, 229); // Indigo
+            doc.text("STUDY SYNC ROADMAP", 14, 20);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(150, 150, 150);
+            doc.text(`Generated on ${new Date().toLocaleDateString()}`, 14, 28);
+
+            let startY = 35;
+
+            generatedData.forEach((day, index) => {
+                if (startY > 250) {
+                    doc.addPage();
+                    startY = 20;
+                }
+
+                const dayStr = new Date(day.date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
+                
+                doc.autoTable({
+                    startY: startY,
+                    head: [[dayStr, 'Subject', 'Topic']],
+                    body: day.sessions.map(s => [s.time, s.subject, s.topic]),
+                    headStyles: { fillColor: [79, 70, 229], fontSize: 9, fontStyle: 'bold' },
+                    bodyStyles: { fontSize: 8 },
+                    columnStyles: { 0: { cellWidth: 35 }, 1: { cellWidth: 40, fontStyle: 'bold' } },
+                    margin: { left: 14, right: 14 },
+                    didParseCell: function(data) {
+                        if (data.row.raw && data.row.raw[1] === 'Break') {
+                            data.cell.styles.textColor = [180, 180, 180];
+                        }
+                    }
+                });
+
+                startY = doc.lastAutoTable.finalY + 10;
+            });
+
+            doc.save("study-sync-roadmap.pdf");
+        }
+
+        function showConfig() {
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('config-screen').classList.remove('hidden');
+            document.getElementById('setup-header').classList.remove('hidden');
+        }
+
+        // Init
+        document.getElementById('startDate').valueAsDate = new Date();
+        addSubjectNode();
+    </script>
+</body>
+</html>
