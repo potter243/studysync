@@ -13,11 +13,13 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         .subject-card, .activity-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .subject-card:hover, .activity-card:hover { transform: translateY(-2px); }
+        input[type="time"]::-webkit-calendar-picker-indicator { cursor: pointer; }
         @media print { .no-print { display: none; } }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-900">
     <div id="app" class="max-w-4xl mx-auto p-4 sm:p-8">
+        <!-- Header -->
         <div id="setup-header" class="mb-12 flex flex-col items-center">
             <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl mb-4">
                 <svg class="text-white w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
@@ -26,6 +28,7 @@
             <p class="text-slate-400 font-bold mt-2 uppercase text-[10px] tracking-[0.3em]">AI-Powered Curriculum Orchestrator</p>
         </div>
 
+        <!-- Configuration -->
         <div id="config-screen" class="space-y-8">
             <section class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
                 <div class="grid md:grid-cols-3 gap-6">
@@ -50,14 +53,16 @@
                 </div>
             </section>
 
+            <!-- Time Exceptions -->
             <div class="space-y-4">
                 <div class="flex justify-between items-center px-2">
                     <h2 class="text-lg font-extrabold text-slate-800 uppercase tracking-tight">Time Exceptions (Hobbies/Meals)</h2>
                     <button onclick="addActivityNode()" class="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl hover:bg-emerald-100 transition-colors uppercase tracking-widest">+ Add Activity</button>
                 </div>
-                <div id="activities-container" class="grid md:grid-cols-2 gap-4"></div>
+                <div id="activities-container" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
             </div>
 
+            <!-- Academic Nodes -->
             <div class="space-y-4">
                 <div class="flex justify-between items-center px-2">
                     <h2 class="text-lg font-extrabold text-slate-800 uppercase tracking-tight">Academic Nodes</h2>
@@ -71,34 +76,35 @@
             </button>
         </div>
 
+        <!-- Result Screen -->
         <div id="result-screen" class="hidden space-y-6">
             <div class="flex justify-between items-center no-print">
                 <button onclick="showConfig()" class="flex items-center text-slate-500 font-bold hover:text-indigo-600 transition-colors text-sm">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg> Edit Parameters
                 </button>
                 <button onclick="exportToPDF()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-extrabold text-sm flex items-center gap-2 shadow-lg shadow-emerald-100">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     Download PDF
                 </button>
             </div>
             <div id="schedule-display" class="grid gap-8"></div>
         </div>
 
-        <div id="loading-overlay" class="fixed inset-0 bg-white/80 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center">
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="fixed inset-0 bg-white/80 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center text-center p-6">
             <div class="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-            <p class="text-indigo-600 font-extrabold uppercase tracking-widest text-[10px]">Processing Curriculum Architecture...</p>
+            <p id="loading-text" class="text-indigo-600 font-extrabold uppercase tracking-widest text-[10px]">Processing Curriculum Architecture...</p>
         </div>
     </div>
 
     <script>
-        const apiKey = "AIzaSyCwNAUpyuQ8csS2C8-ZLoKvO_GVoFG64Po"; 
+        const apiKey = "AIzaSyC9NT4-CoMdAsof9QboqNmt3OmuWmfdJ4g"; // API Key is handled by environment
         let generatedData = [];
+
         const colors = [
             { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-100', dot: 'bg-blue-400' },
             { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-100', dot: 'bg-purple-400' },
             { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-100', dot: 'bg-amber-400' },
-            { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-100', dot: 'bg-rose-400' },
-            { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-100', dot: 'bg-emerald-400' }
+            { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-100', dot: 'bg-rose-400' }
         ];
 
         function addActivityNode() {
@@ -106,23 +112,25 @@
             const container = document.getElementById('activities-container');
             const div = document.createElement('div');
             div.id = `act-${id}`;
-            div.className = 'bg-white p-4 rounded-2xl border border-emerald-50 shadow-sm relative group activity-card';
+            div.className = 'bg-white p-6 rounded-[1.8rem] border border-slate-100 shadow-sm relative group activity-card';
             div.innerHTML = `
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="col-span-2">
-                        <label class="block text-[9px] text-slate-400 font-black uppercase mb-1">Activity Name</label>
-                        <input type="text" class="act-name w-full p-2 bg-slate-50 rounded-lg text-xs font-bold border-none" placeholder="e.g. Gym / Dinner">
-                    </div>
+                <div class="space-y-4">
                     <div>
-                        <label class="block text-[9px] text-slate-400 font-black uppercase mb-1">From</label>
-                        <input type="time" class="act-start w-full p-2 bg-slate-50 rounded-lg text-xs font-bold border-none">
+                        <label class="block text-[10px] text-slate-400 font-black uppercase mb-2 tracking-wide">Activity Name</label>
+                        <input type="text" class="act-name w-full p-3.5 bg-slate-50 rounded-xl text-sm font-bold text-slate-600 border-none focus:ring-2 focus:ring-emerald-50" placeholder="e.g. Gym / Dinner">
                     </div>
-                    <div>
-                        <label class="block text-[9px] text-slate-400 font-black uppercase mb-1">To</label>
-                        <input type="time" class="act-end w-full p-2 bg-slate-50 rounded-lg text-xs font-bold border-none">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] text-slate-400 font-black uppercase mb-2 tracking-wide">From</label>
+                            <input type="time" class="act-start w-full p-3.5 bg-slate-50 rounded-xl text-sm font-bold text-slate-600 border-none focus:ring-2 focus:ring-emerald-50">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 font-black uppercase mb-2 tracking-wide">To</label>
+                            <input type="time" class="act-end w-full p-3.5 bg-slate-50 rounded-xl text-sm font-bold text-slate-600 border-none focus:ring-2 focus:ring-emerald-50">
+                        </div>
                     </div>
                 </div>
-                <button onclick="document.getElementById('act-${id}').remove()" class="absolute -top-2 -right-2 bg-white border border-slate-100 text-slate-300 hover:text-red-500 w-6 h-6 rounded-full flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">×</button>
+                <button onclick="document.getElementById('act-${id}').remove()" class="absolute -top-2 -right-2 bg-white border border-slate-100 text-slate-300 hover:text-red-500 w-8 h-8 rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-all font-bold">×</button>
             `;
             container.appendChild(div);
         }
@@ -133,34 +141,34 @@
             const div = document.createElement('div');
             const todayStr = new Date().toISOString().split('T')[0];
             div.id = `node-${id}`;
-            div.className = 'bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative group subject-card';
+            div.className = 'bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative group subject-card';
             div.innerHTML = `
-                <div class="grid md:grid-cols-4 gap-4">
-                    <div class="md:col-span-1">
+                <div class="grid md:grid-cols-4 gap-4 items-end">
+                    <div>
                         <label class="block text-[9px] text-slate-400 font-black uppercase mb-1">Subject Title</label>
-                        <input type="text" class="subject-name w-full p-2.5 bg-slate-50 rounded-lg text-sm font-bold border-none" placeholder="e.g. Organic Chem">
+                        <input type="text" class="subject-name w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-none" placeholder="e.g. Physics">
                     </div>
-                    <div class="md:col-span-1">
+                    <div>
                         <label class="block text-[9px] text-slate-400 font-black uppercase mb-1">Exam Date</label>
-                        <input type="date" min="${todayStr}" class="subject-date w-full p-2.5 bg-slate-50 rounded-lg text-sm font-bold border-none">
+                        <input type="date" min="${todayStr}" class="subject-date w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-none">
                     </div>
-                    <div class="md:col-span-1">
+                    <div>
                         <label class="block text-[9px] text-slate-400 font-black uppercase mb-1">Priority</label>
-                        <select class="subject-diff w-full p-2.5 bg-slate-50 rounded-lg text-sm font-bold border-none appearance-none">
+                        <select class="subject-diff w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-none appearance-none">
                             <option value="Easy">Low Complexity</option>
                             <option value="Medium" selected>Moderate</option>
                             <option value="Hard">High Complexity</option>
                         </select>
                     </div>
-                    <div class="md:col-span-1">
+                    <div class="relative">
                         <input type="file" accept=".pdf" id="pdf-${id}" class="hidden" onchange="extractPDF(${id}, this)">
-                        <label for="pdf-${id}" class="flex items-center justify-center p-2.5 bg-slate-50 border-2 border-dashed border-slate-200 rounded-lg cursor-pointer hover:border-indigo-300 transition-all h-[42px] mt-4">
-                            <span class="text-[9px] font-black uppercase text-slate-400 file-status">Attach PDF</span>
+                        <label for="pdf-${id}" class="flex items-center justify-center p-3 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-indigo-300 transition-all h-[46px]">
+                            <span class="text-[9px] font-black uppercase text-slate-400 file-status">Attach Syllabus</span>
                         </label>
                         <input type="hidden" id="text-${id}" class="extracted-text">
                     </div>
                 </div>
-                <button onclick="document.getElementById('node-${id}').remove()" class="absolute -top-2 -right-2 bg-white border border-slate-100 text-slate-300 hover:text-red-500 w-6 h-6 rounded-full flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">×</button>
+                <button onclick="document.getElementById('node-${id}').remove()" class="absolute -top-2 -right-2 bg-white border border-slate-100 text-slate-300 hover:text-red-500 w-8 h-8 rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-all font-bold">×</button>
             `;
             container.appendChild(div);
         }
@@ -185,11 +193,32 @@
                     }
                     hidden.value = fullText.slice(0, 3000);
                     status.textContent = "Synced ✓";
-                    status.classList.replace('text-slate-400', 'text-indigo-600');
+                    status.classList.add('text-indigo-600');
                 };
                 reader.readAsArrayBuffer(file);
-            } catch (e) {
-                status.textContent = "Error";
+            } catch (e) { status.textContent = "Error"; }
+        }
+
+        async function fetchWithRetry(prompt, retries = 5, delay = 1000) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { responseMimeType: "application/json" }
+            };
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) return await response.json();
+                } catch (e) {
+                    if (i === retries - 1) throw e;
+                }
+                await new Promise(res => setTimeout(res, delay));
+                delay *= 2;
             }
         }
 
@@ -197,56 +226,48 @@
             const nodes = document.querySelectorAll('#subjects-container > div');
             const actNodes = document.querySelectorAll('#activities-container > div');
             const startDate = document.getElementById('startDate').value;
-            const today = new Date().toISOString().split('T')[0];
 
-            if (!startDate) return alert("Select a start date");
-            if (startDate < today) return alert("Start date cannot be in the past");
-            if (nodes.length === 0) return alert("Add a subject");
+            if (!startDate || nodes.length === 0) return alert("Please set a start date and at least one subject.");
 
             const subjects = Array.from(nodes).map(n => ({
-                name: n.querySelector('.subject-name').value || 'Unlabeled',
+                name: n.querySelector('.subject-name').value || 'Subject',
                 date: n.querySelector('.subject-date').value,
                 difficulty: n.querySelector('.subject-diff').value,
                 context: n.querySelector('.extracted-text').value
             }));
 
             const activities = Array.from(actNodes).map(n => ({
-                name: n.querySelector('.act-name').value || 'Personal Activity',
+                name: n.querySelector('.act-name').value || 'Reserved',
                 start: n.querySelector('.act-start').value,
                 end: n.querySelector('.act-end').value
             }));
 
             document.getElementById('loading-overlay').classList.remove('hidden');
+            document.getElementById('loading-text').textContent = "Calibrating Neural Pathways...";
 
-            const prompt = `
-                Generate a study schedule starting from ${startDate}.
-                Weekday availability: ${document.getElementById('weekdayStart').value} to ${document.getElementById('weekdayEnd').value}.
-                Weekend availability: ${document.getElementById('weekendStart').value} to ${document.getElementById('weekendEnd').value}.
-                
-                MANDATORY BLOCKED TIMES (Do not schedule study here): ${JSON.stringify(activities)}
-                
-                Subjects to study: ${JSON.stringify(subjects)}
-                
-                Return JSON array: [{ date: "YYYY-MM-DD", sessions: [{ time: "HH:MM - HH:MM", subject: string, topic: string, isBreak: boolean }] }].
-                If a time slot overlaps with a MANDATORY BLOCKED TIME, label that session as isBreak: true and subject: "Reserved: [Activity Name]".
-                Prioritize exams that are sooner.
-            `;
+            const prompt = `Generate a rigorous study schedule starting ${startDate}. 
+            Weekday study window: ${document.getElementById('weekdayStart').value} to ${document.getElementById('weekdayEnd').value}.
+            Weekend study window: ${document.getElementById('weekendStart').value} to ${document.getElementById('weekendEnd').value}.
+            MANDATORY FIXED ACTIVITIES (Block these out exactly): ${JSON.stringify(activities)}.
+            Academic Subjects to cover: ${JSON.stringify(subjects)}.
+            
+            Return ONLY a valid JSON array: [{ "date": "YYYY-MM-DD", "sessions": [{ "time": "HH:MM-HH:MM", "subject": "string", "topic": "string", "isBreak": boolean }] }]. 
+            
+            Guidelines:
+            1. Sessions should be 45-90 mins.
+            2. Mark fixed activities as isBreak: true and subject: "Reserved: [Activity Name]".
+            3. Prioritize subjects with closer exam dates.`;
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: { responseMimeType: "application/json" }
-                    })
-                });
-                const data = await response.json();
-                generatedData = JSON.parse(data.candidates[0].content.parts[0].text);
+                const result = await fetchWithRetry(prompt);
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!text) throw new Error("No data returned");
+                
+                generatedData = JSON.parse(text);
                 renderUI(generatedData);
             } catch (e) {
                 console.error(e);
-                alert("Generation failed. Try again.");
+                alert("Network timeout or invalid data. Please try again.");
             } finally {
                 document.getElementById('loading-overlay').classList.add('hidden');
             }
@@ -255,8 +276,8 @@
         function renderUI(data) {
             document.getElementById('config-screen').classList.add('hidden');
             document.getElementById('setup-header').classList.add('hidden');
-            const display = document.getElementById('schedule-display');
             document.getElementById('result-screen').classList.remove('hidden');
+            const display = document.getElementById('schedule-display');
 
             const subjectList = [...new Set(data.flatMap(d => d.sessions.filter(s => !s.isBreak).map(s => s.subject)))];
             const colorMap = {};
@@ -264,9 +285,9 @@
 
             display.innerHTML = data.map(day => `
                 <div class="day-block">
-                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3">
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3">
                         ${new Date(day.date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
-                        <span class="h-px bg-slate-100 flex-1"></span>
+                        <span class="h-px bg-slate-200 flex-1"></span>
                     </h3>
                     <div class="grid gap-3">
                         ${day.sessions.map(s => {
@@ -274,14 +295,14 @@
                             const color = isReserved ? { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-100', dot: 'bg-emerald-400' } : 
                                           (s.isBreak ? { bg: 'bg-slate-50', text: 'text-slate-400', border: 'border-slate-100', dot: 'bg-slate-200' } : (colorMap[s.subject] || colors[0]));
                             return `
-                            <div class="flex items-center gap-4 bg-white p-4 rounded-2xl border ${color.border} shadow-sm">
-                                <div class="text-[10px] font-bold text-slate-400 w-24">${s.time}</div>
-                                <div class="w-2 h-2 rounded-full ${color.dot}"></div>
+                            <div class="flex items-center gap-4 bg-white p-5 rounded-3xl border ${color.border} shadow-sm">
+                                <div class="text-[10px] font-black text-slate-400 w-24">${s.time}</div>
+                                <div class="w-2.5 h-2.5 rounded-full ${color.dot}"></div>
                                 <div class="flex-1">
-                                    <div class="text-[10px] font-black uppercase ${color.text} mb-0.5">${s.subject}</div>
+                                    <div class="text-[9px] font-black uppercase ${color.text} mb-0.5 tracking-wider">${s.subject}</div>
                                     <div class="text-sm font-bold text-slate-700">${s.topic}</div>
                                 </div>
-                                ${isReserved ? '<span class="text-[8px] font-black text-emerald-400 uppercase italic">Activity</span>' : (s.isBreak ? '<span class="text-[8px] font-black text-slate-300 uppercase italic">Recess</span>' : '')}
+                                ${isReserved ? '<span class="text-[8px] font-black text-emerald-400 uppercase italic">Fix</span>' : (s.isBreak ? '<span class="text-[8px] font-black text-slate-300 uppercase italic">Gap</span>' : '')}
                             </div>
                             `;
                         }).join('')}
@@ -290,29 +311,26 @@
             `).join('');
         }
 
-        async function exportToPDF() {
+        function exportToPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             doc.setFontSize(22);
-            doc.setTextColor(79, 70, 229);
-            doc.text("STUDY SYNC ROADMAP", 14, 20);
-            doc.setFontSize(10);
-            doc.setTextColor(150, 150, 150);
-            doc.text(`Generated on ${new Date().toLocaleDateString()}`, 14, 28);
-
-            let startY = 35;
-            generatedData.forEach((day, index) => {
-                if (startY > 250) { doc.addPage(); startY = 20; }
-                const dayStr = new Date(day.date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
+            doc.text("Study Sync Roadmap", 14, 20);
+            let y = 35;
+            generatedData.forEach(day => {
+                if (y > 250) { doc.addPage(); y = 20; }
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text(day.date, 14, y);
+                y += 5;
                 doc.autoTable({
-                    startY: startY,
-                    head: [[dayStr, 'Subject', 'Topic']],
+                    startY: y,
+                    head: [['Time', 'Subject', 'Topic']],
                     body: day.sessions.map(s => [s.time, s.subject, s.topic]),
-                    headStyles: { fillColor: [79, 70, 229], fontSize: 9, fontStyle: 'bold' },
-                    bodyStyles: { fontSize: 8 },
-                    margin: { left: 14, right: 14 }
+                    headStyles: { fillColor: [79, 70, 229] },
+                    margin: { left: 14 }
                 });
-                startY = doc.lastAutoTable.finalY + 10;
+                y = doc.lastAutoTable.finalY + 15;
             });
             doc.save("study-sync-roadmap.pdf");
         }
@@ -325,10 +343,8 @@
 
         // Init
         document.getElementById('startDate').valueAsDate = new Date();
-        document.getElementById('startDate').setAttribute('min', new Date().toISOString().split('T')[0]);
+        addActivityNode();
         addSubjectNode();
     </script>
 </body>
 </html>
-
-      
